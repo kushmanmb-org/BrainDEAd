@@ -1,0 +1,83 @@
+name: Deploy Application
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment || 'production' }}
+    runs-on: self-hosted
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      
+      - name: Create deployment package
+        run: |
+          echo "Creating deployment package..."
+          mkdir -p dist
+          tar -czf dist/brain-tumor-detection.tar.gz \
+            --exclude='.git' \
+            --exclude='dist' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            .
+      
+      - name: Deploy application
+        run: |
+          echo "Deploying to ${{ github.event.inputs.environment || 'production' }}"
+          echo "Deployment logic would go here"
+          # Add your deployment commands here
+      
+      - name: Health check
+        run: |
+          echo "Running health checks..."
+          # Add health check commands here
+      
+      - name: Upload deployment artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-package
+          path: dist/
+          retention-days: 90
+      
+      - name: Notify deployment status
+        if: always()
+        run: |
+          echo "Deployment ${{ job.status }}"
+          # Add notification logic here (Slack, email, etc.)
