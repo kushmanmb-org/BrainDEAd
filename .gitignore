@@ -141,6 +141,6 @@ tmp/
 temp/
 *.tmp
 
-# Documentation files to ignore (as per requirements)
-README.md
-POLICY.md
+# Documentation files to ignore in root (as per requirements)
+/README.md
+/POLICY.md
